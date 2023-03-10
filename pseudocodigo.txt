@@ -1,0 +1,78 @@
+Pseudocódigo para guardar la biblia en base de datos: (para python)
+
+
+#Declaración de variables:
+
+cap=0, vers=0, textvers="", copiar=False, libroID=0
+ruta_libros="biblia_txt"
+
+conecto con la base de datos sqlite biblia.db ubicada en la carpeta raiz
+
+Recorro con un for los archivos de texto que están en la carpeta que está en ruta_libros (los libros de la biblia)
+	vLibroID = ExtraerLibroID (libro_actual)
+	genero nombre de próxima tabla: tabla_name= LimpiarNombre(libro_actual)	
+	Creo una tabla if not exist con el nombre tabla_name
+	con los campos ID(autoincrem.,clave), testamentoID, grupoID, libroID, capitulo, versiculo, texto, comentario
+	copiar=false
+	cap=0
+	vers=0
+	Abro un el libro y lo leo línea por línea (libro_actual)
+		if línea es un capítulo (si encuentra el texto |CAPÍTULO [número] sin nada antes o después):
+			cap=[número]
+		elsif línea es versículo (si encuentra un número aislado sin nada antes ni después):
+			if cap!= 0: 
+				función GuardarRegistro(tabla_name, vLibroID, cap,vers,textvers)
+			vers = número aislado
+			copiar=true
+		if copiar=true
+			textvers=textvers + línea
+
+
+
+funcion ExtraerLibroID (Nombre_de_archivo):
+	Función para extraer el número que está al principio del nombre del archivo antes del "."
+
+función LimpiarNombre(Nombre_de_archivo):
+	Extraigo el nombre del libro actual sin el número y punto iniales ni la extención.
+	tambien tiene que cambiar los caracteres con tilde (áéíóúÁÉÍÓÚ) por caracteres sin tilde (aeiouAEIOU)
+	finalmente lo pasará todo a mayúsculas.
+	ejemplo: 
+	entrada="1.Génesis.txt"
+	salida="GENESIS"	
+
+función GuardarRegistro(tabla, libroID, capitulo, versiculo, texto)
+	guardo en la base de datos, tabla [tabla] 
+		campo testamentoID= if libroID<40 then 1 else 2
+		campo grupoID= AsignarGrupoID(tabla)
+		libroID=libroID
+		campo capitulo=cap, 
+		campo versiculo=vers, 
+		campo texto=textvers
+
+
+def AsignarGrupoID(libro):
+    if libro in ["GENESIS", "EXODO", "LEVITICO", "NUMEROS", "DEUTERONOMIO"]:
+        return 1
+    elif libro in ["JOSUE", "JUECES", "RUT", "1SAMUEL", "2SAMUEL", "1REYES", "2REYES", "1CRONICAS", "2CRONICAS", "ESDRAS", "NEHEMIAS", "ESTER"]:
+        return 2
+    elif libro in ["JOB", "SALMOS", "PROVERBIOS", "ECLESIASTES", "CANTARES"]:
+        return 3
+    elif libro in ["ISAIAS", "JEREMIAS", "LAMENTACIONES", "EZEQUIEL", "DANIEL"]:
+        return 4
+    elif libro in ["OSEAS", "JOEL", "AMOS", "ABDIAS", "JONAS", "MIQUEAS", "NAHUM", "HABACUC", "SOFONIAS", "AGEO", "ZACARIAS", "MALAQUIAS"]:
+        return 5
+    elif libro in ["MATEO", "MARCOS", "LUCAS", "JUAN"]:
+        return 6
+    elif libro == "HECHOS":
+        return 7
+    elif libro in ["ROMANOS", "1CORINTIOS", "2CORINTIOS", "GALATAS", "EFESIOS", "FILIPENSES", "COLOSENSES", "1TESALONICENSES", "2TESALONICENSES", "1TIMOTEO", "2TIMOTEO", "TITO", "FILEMON"]:
+        return 8
+    elif libro in ["HEBREOS", "SANTIAGO", "1PEDRO", "2PEDRO", "1JUAN", "2JUAN", "3JUAN", "JUDAS"]:
+        return 9
+    elif libro == "APOCALIPSIS":
+        return 10
+    else:
+        return None
+
+		
+	
