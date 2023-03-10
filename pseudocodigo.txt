@@ -76,3 +76,31 @@ def AsignarGrupoID(libro):
 
 		
 	
+
+Para cada archivo en la lista ordenada de archivos en la ruta de libros:
+    libroID = ExtraerLibroID(archivo)
+    tabla_name = LimpiarNombre(archivo)
+    tabla_name = reemplazar_espacios_por_guiones_bajos(tabla_name)
+    conn.execute("CREATE TABLE IF NOT EXISTS '{tabla_name}' (ID INTEGER PRIMARY KEY AUTOINCREMENT, testamentoID INTEGER, grupoID INTEGER, libroID INTEGER, capitulo INTEGER, versiculo INTEGER, texto TEXT, comentario TEXT)")
+    imprimir "Iteración" y el número de iteración y el nombre de la tabla actual
+    copiar = False
+    cap = 0
+    vers = 0
+    abrir archivo de texto en modo lectura
+    Para cada línea en el archivo:
+        quitar espacios en blanco al principio y al final de la línea
+        Si la línea coincide con el patrón de un capítulo:
+            encontrar el número de capítulo en la línea con un patrón específico
+            asignar el número de capítulo a la variable cap            
+        Sino, si la línea es un número:
+            si cap y vers son mayores que 0:
+                guardar un registro en la tabla actual con el libroID, el número de capítulo, el número de versículo, el texto del versículo y el comentario
+                borrar el contenido de la variable textvers
+                borrar el contenido de la variable comentario
+            asignar el número de versículo a la variable vers
+            obtener el comentario para este versículo con ComentarioBiblico(ruta_comentarios/archivo, cap|vers)
+            asignar True a la variable copiar
+        Si copiar es True:
+            añadir la línea a la variable textvers
+    cerrar el archivo de texto
+cerrar la conexión a la base de datos

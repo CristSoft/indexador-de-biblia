@@ -96,9 +96,13 @@ for archivo in sorted(os.listdir(ruta_libros)):
             linea = linea.strip()
             #if re.match('^CAPÍTULO [0-9]+$', linea):
             if re.match(patron_capitulo, linea):
+                if int(cap) > 0 and int(vers) > 0:                        
+                    GuardarRegistro(tabla_name, libroID, cap, vers, textvers,comentario)
+                    textvers=""
+                    comentario=""
                 resultado = re.search(patron_numeroCap, linea)          
-            elif re.match(patron_salmo, linea):
-                resultado = re.search(patron_numeroCap, linea)          
+            # elif re.match(patron_salmo, linea):
+            #     resultado = re.search(patron_numeroCap, linea)          
                 if resultado:
                     cap = resultado.group(0)#int(linea.split(' ')[1])
                     print(tabla_name, "Capítulo", cap)
