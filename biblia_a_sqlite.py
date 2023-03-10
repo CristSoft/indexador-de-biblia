@@ -2,6 +2,26 @@ import os
 import sqlite3
 import re
 
+#Función para buscar los comentarios bíblicos
+def ComentarioBiblico(archivo, cap_y_ver):
+    # Abrir el archivo
+    with open(archivo, 'r') as f:
+        # Leer el contenido del archivo
+        contenido = f.read()
+        # Buscar la posición de la primera cadena
+        pos1 = contenido.find(cap_y_ver)
+        if pos1 == -1:
+            return ""
+        # Buscar la posición de la segunda cadena
+        pos2 = contenido.find("|", pos1 + len(cap_y_ver))
+        if pos2 == -1:
+            pos2 = len(contenido)
+        # Obtener el texto entre las cadenas
+        inicio = pos1 + len(cap_y_ver)
+        fin = pos2
+        texto = contenido[inicio:fin]
+        return texto.strip()
+
 
 # Función para extraer el número que está al principio del nombre del archivo antes del "."
 def ExtraerLibroID(nombre_de_archivo):
@@ -35,7 +55,7 @@ def AsignarGrupoID(libro):
 conn = sqlite3.connect('biblia.db')
 
 # Función para guardar un registro en la base de datos
-def GuardarRegistro(tabla, libroID, capitulo, versiculo, texto):
+def GuardarRegistro(tabla, libroID, capitulo, versiculo, texto, comentario):
     testamentoID = 1 if libroID < 40 else 2
     grupoID = AsignarGrupoID(tabla)
     conn.execute(f"INSERT INTO {tabla} (testamentoID, grupoID, libroID, capitulo, versiculo, texto) VALUES (?, ?, ?, ?, ?, ?)", (testamentoID, grupoID, libroID, capitulo, versiculo, texto))
@@ -46,9 +66,11 @@ def GuardarRegistro(tabla, libroID, capitulo, versiculo, texto):
 cap = 0
 vers = 0
 textvers = ""
+comentario=""
 copiar = False
 libroID = 0
 ruta_libros = "biblia_txt"
+ruta_comentarios="CBIndexado"
 #patron_capitulo = r'^| CAPÍTULO\s+(\d+)\s*$'
 patron_capitulo = r'^\| CAPÍTULO\s+(\d+)\s*$'
 
@@ -79,10 +101,12 @@ for archivo in sorted(os.listdir(ruta_libros)):
                         cap = resultado.group(0)#int(linea.split(' ')[1])
                         print(tabla_name, "Capítulo", cap)
                 elif re.match('^[0-9]+$', linea):
-                    if int(cap) > 0 and int(vers) > 0:
-                        GuardarRegistro(tabla_name, libroID, cap, vers, textvers)
+                    if int(cap) > 0 and int(vers) > 0:                        
+                        GuardarRegistro(tabla_name, libroID, cap, vers, textvers,comentario)
                         textvers=""
+                        comentario=""
                     vers = int(linea)
+                    comentario=ComentarioBiblico(,cap+"|"+vers)                    
                     copiar = True
                 if copiar:
                     textvers += linea + ' '
