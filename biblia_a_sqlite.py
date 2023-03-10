@@ -5,7 +5,8 @@ import re
 #Función para buscar los comentarios bíblicos
 def ComentarioBiblico(archivo, cap_y_ver):
     # Abrir el archivo
-    with open(archivo, 'r') as f:
+    # with open(archivo, 'r') as f:
+    with open(archivo, 'r', encoding='utf-8') as f:
         # Leer el contenido del archivo
         contenido = f.read()
         # Buscar la posición de la primera cadena
@@ -58,7 +59,7 @@ conn = sqlite3.connect('biblia.db')
 def GuardarRegistro(tabla, libroID, capitulo, versiculo, texto, comentario):
     testamentoID = 1 if libroID < 40 else 2
     grupoID = AsignarGrupoID(tabla)
-    conn.execute(f"INSERT INTO {tabla} (testamentoID, grupoID, libroID, capitulo, versiculo, texto) VALUES (?, ?, ?, ?, ?, ?)", (testamentoID, grupoID, libroID, capitulo, versiculo, texto))
+    conn.execute(f"INSERT INTO {tabla} (testamentoID, grupoID, libroID, capitulo, versiculo, texto, comentario) VALUES (?, ?, ?, ?, ?, ?, ?)", (testamentoID, grupoID, libroID, capitulo, versiculo, texto, comentario))
     conn.commit()
 
 
@@ -80,41 +81,40 @@ patron_numeroCap = r"\d+"
 n=0
 # Obtener la lista de nombres de archivo en la carpeta y ordenarla alfabéticamente
 for archivo in sorted(os.listdir(ruta_libros)):
-    if LimpiarNombre(archivo)!="2SAMUEL":
+    libroID = ExtraerLibroID(archivo)
+    tabla_name = LimpiarNombre(archivo)
+    tabla_name = re.sub('\s+', '_', tabla_name)
+    conn.execute(f"CREATE TABLE IF NOT EXISTS '{tabla_name}' (ID INTEGER PRIMARY KEY AUTOINCREMENT, testamentoID INTEGER, grupoID INTEGER, libroID INTEGER, capitulo INTEGER, versiculo INTEGER, texto TEXT, comentario TEXT)")
+    # conn.execute(f"DROP TABLE IF EXISTS '{tabla_name}';")
+    print("Iteración",n," Libro", tabla_name)
+    copiar = False
+    cap = 0
+    vers = 0
+    with open(f"{ruta_libros}/{archivo}", 'r') as libro_actual:
+        for linea in libro_actual:
+            linea = linea.strip()
+            #if re.match('^CAPÍTULO [0-9]+$', linea):
+            if re.match(patron_capitulo, linea):  
+                resultado = re.search(patron_numeroCap, linea)          
+                if resultado:
+                    cap = resultado.group(0)#int(linea.split(' ')[1])
+                    print(tabla_name, "Capítulo", cap)
+            elif re.match('^[0-9]+$', linea):
+                if int(cap) > 0 and int(vers) > 0:                        
+                    GuardarRegistro(tabla_name, libroID, cap, vers, textvers,comentario)
+                    textvers=""
+                    comentario=""
+                vers = int(linea)
+                # comentario=ComentarioBiblico({ruta_comentarios}&"/"&{archivo},cap&"|"&vers)                    
+                comentario = ComentarioBiblico(os.path.join(ruta_comentarios, archivo), str(cap) + "|" + str(vers))
+                copiar = True
+            if copiar:
+                textvers += linea + ' '
+            # print("Vers", linea)
+            # if cap != 0:
+            #     GuardarRegistro(tabla_name, libroID, cap, vers, textvers)
+            #     textvers = ""
+        n=n+1
+        
 
-        libroID = ExtraerLibroID(archivo)
-        tabla_name = LimpiarNombre(archivo)
-        tabla_name = re.sub('\s+', '_', tabla_name)
-        conn.execute(f"CREATE TABLE IF NOT EXISTS '{tabla_name}' (ID INTEGER PRIMARY KEY AUTOINCREMENT, testamentoID INTEGER, grupoID INTEGER, libroID INTEGER, capitulo INTEGER, versiculo INTEGER, texto TEXT, comentario TEXT)")
-        # conn.execute(f"DROP TABLE IF EXISTS '{tabla_name}';")
-
-        copiar = False
-        cap = 0
-        vers = 0
-        with open(f"{ruta_libros}/{archivo}", 'r') as libro_actual:
-            for linea in libro_actual:
-                linea = linea.strip()
-                #if re.match('^CAPÍTULO [0-9]+$', linea):
-                if re.match(patron_capitulo, linea):  
-                    resultado = re.search(patron_numeroCap, linea)          
-                    if resultado:
-                        cap = resultado.group(0)#int(linea.split(' ')[1])
-                        print(tabla_name, "Capítulo", cap)
-                elif re.match('^[0-9]+$', linea):
-                    if int(cap) > 0 and int(vers) > 0:                        
-                        GuardarRegistro(tabla_name, libroID, cap, vers, textvers,comentario)
-                        textvers=""
-                        comentario=""
-                    vers = int(linea)
-                    comentario=ComentarioBiblico(,cap+"|"+vers)                    
-                    copiar = True
-                if copiar:
-                    textvers += linea + ' '
-                # print("Vers", linea)
-                # if cap != 0:
-                #     GuardarRegistro(tabla_name, libroID, cap, vers, textvers)
-                #     textvers = ""
-            n=n+1
-            print("Iteración",n," Libro", tabla_name)
-
-    conn.close()
+conn.close()
