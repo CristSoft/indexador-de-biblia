@@ -74,6 +74,7 @@ ruta_libros = "biblia_txt"
 ruta_comentarios="CBIndexado"
 #patron_capitulo = r'^| CAPÍTULO\s+(\d+)\s*$'
 patron_capitulo = r'^\| CAPÍTULO\s+(\d+)\s*$'
+patron_salmo = r'^\| SALMO\s+(\d+)\s*$'
 
 # patron_capitulo = r'|'
 patron_numeroCap = r"\d+"
@@ -94,7 +95,9 @@ for archivo in sorted(os.listdir(ruta_libros)):
         for linea in libro_actual:
             linea = linea.strip()
             #if re.match('^CAPÍTULO [0-9]+$', linea):
-            if re.match(patron_capitulo, linea):  
+            if re.match(patron_capitulo, linea):
+                resultado = re.search(patron_numeroCap, linea)          
+            elif re.match(patron_salmo, linea):
                 resultado = re.search(patron_numeroCap, linea)          
                 if resultado:
                     cap = resultado.group(0)#int(linea.split(' ')[1])
