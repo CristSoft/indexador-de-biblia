@@ -35,4 +35,64 @@ def agregar_texto_a_archivos():
                 # Agregar el número al final del archivo
                 f.write(numero)
 
-agregar_texto_a_archivos
+
+import re
+def agregar_referencias_vacias(archivo):
+    with open(archivo, 'r', encoding='utf-8') as f:
+        lineas = f.readlines()
+        referencias_existentes = set()
+        referencias_faltantes = set()
+        # Verificar si hay referencias en el archivo
+        if not any(re.search(r'\b\d+\|\d+\b', linea) for linea in lineas):
+            # El archivo está vacío o no tiene referencias
+            cap_inicial, cap_final = 1, 150
+            ver_inicial, ver_final = 1, 176
+            for cap in range(cap_inicial, cap_final + 1):
+                for ver in range(ver_inicial, ver_final + 1):
+                    referencia = f"{cap}|{ver}"
+                    nueva_linea = f"\n{referencia}\nSin comentarios para este versículo\n"
+                    lineas.append(nueva_linea)
+            referencias_existentes = set(f"{cap}|{ver}" for cap in range(cap_inicial, cap_final + 1) for ver in range(ver_inicial, ver_final + 1))
+        else:
+            for linea in lineas:
+                match = re.search(r'\b\d+\|\d+\b', linea)
+                if match:
+                    referencia = match.group()
+                    if referencia not in referencias_existentes:
+                        if referencias_faltantes:
+                            # Crear referencias vacías para las combinaciones número|número ausentes
+                            for ref in sorted(referencias_faltantes):
+                                cap, ver = ref.split("|")
+                                nueva_referencia = f"{cap}|{ver}"
+                                nueva_linea = f"\n{nueva_referencia}\nSin comentarios para este versículo\n"
+                                lineas.insert(lineas.index(linea), nueva_linea)
+                            referencias_faltantes.clear()
+                        referencias_existentes.add(referencia)
+                    else:
+                        # Verificar si hay referencias ausentes entre las referencias existentes
+                        cap_existente, ver_existente = map(int, referencia.split("|"))
+                        for cap, ver in sorted(referencias_existentes):
+                            cap_actual, ver_actual = map(int, (cap, ver))
+                            if cap_actual == cap_existente:
+                                if ver_actual < ver_existente - 1:
+                                    for i in range(ver_actual + 1, ver_existente):
+                                        ref_faltante = f"{cap}|{i}"
+                                        referencias_faltantes.add(ref_faltante)
+                        referencias_existentes.add(referencia)
+            if referencias_faltantes:
+                # Crear referencias vacías para las combinaciones número|número ausentes al final del documento
+                for ref in sorted(referencias_faltantes):
+                    cap, ver = ref.split("|")
+                    nueva_referencia = f"{cap}|{ver}"
+                    nueva_linea = f"\n{nueva_referencia}\nSin comentarios para este versículo\n"
+                    lineas.append(nueva_linea)
+    # Sobreescribir el archivo original con las nuevas referencias
+    with open(archivo, 'w', encoding='utf-8') as f:
+        f.writelines(lineas)
+
+
+
+
+ruta_libros = "CBIndexado/"
+agregar_referencias_vacias(ruta_libros+"GenesisPrueba.txt")
+

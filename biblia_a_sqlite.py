@@ -2,7 +2,7 @@ import os
 import sqlite3
 import re
 
-#Función para buscar los comentarios bíblicos
+""" #Función para buscar los comentarios bíblicos
 def ComentarioBiblico(archivo, cap_y_ver):
     # Abrir el archivo
     # with open(archivo, 'r') as f:
@@ -21,7 +21,37 @@ def ComentarioBiblico(archivo, cap_y_ver):
         inicio = pos1 + len(cap_y_ver)
         fin = pos2
         texto = contenido[inicio:fin]
-        return texto.strip()
+        return texto.strip() """
+import re
+
+def ComentarioBiblico(archivo, cap_y_ver):
+    with open(archivo, 'r', encoding='utf-8') as f:
+        contenido = f.read()
+        pos1 = contenido.find(cap_y_ver)
+        if pos1 == -1:
+            return ""
+        pos2 = contenido.find("\n", pos1+len(cap_y_ver))
+        if pos2 == -1:
+            pos2 = len(contenido)
+        # Buscar la siguiente combinación "num|num"
+        pos3 = contenido.find("\n\d+\|\d+", pos2)
+        if pos3 == -1:
+            pos3 = len(contenido)
+        # Obtener el texto entre las cadenas
+        inicio = pos2 + 1
+        fin = pos3
+        texto = contenido[inicio:fin]
+        # Verificar que la cadena encontrada sea exactamente igual a "num|num"
+        match = re.match(r"^\d+\|\d+$", cap_y_ver)
+        if match and contenido[pos1:pos2].strip() == cap_y_ver:
+            return texto.strip()
+        else:
+            return ""
+
+
+
+
+
 
 
 # Función para extraer el número que está al principio del nombre del archivo antes del "."
@@ -63,7 +93,7 @@ def GuardarRegistro(tabla, libroID, capitulo, versiculo, texto, comentario):
     conn.commit()
 
 
-# Declaración de variables:
+""" # Declaración de variables:
 cap = 0
 vers = 0
 textvers = ""
@@ -93,28 +123,25 @@ for archivo in sorted(os.listdir(ruta_libros)):
     vers = 0
     with open(f"{ruta_libros}/{archivo}", 'r') as libro_actual:
         for linea in libro_actual:
-            linea = linea.strip()
-            #if re.match('^CAPÍTULO [0-9]+$', linea):
+            linea = linea.strip()            
             if re.match(patron_capitulo, linea):
-                if int(cap) > 0 and int(vers) > 0:                        
-                    GuardarRegistro(tabla_name, libroID, cap, vers, textvers,comentario)
-                    textvers=""
-                    comentario=""
                 resultado = re.search(patron_numeroCap, linea)          
-            # elif re.match(patron_salmo, linea):
-            #     resultado = re.search(patron_numeroCap, linea)          
                 if resultado:
                     cap = resultado.group(0)#int(linea.split(' ')[1])
                     print(tabla_name, "Capítulo", cap)
+                    if int(vers) > 0:
+                        GuardarRegistro(tabla_name, libroID, cap, vers, textvers,comentario)
+                        textvers=""
+                        comentario=""
             elif re.match('^[0-9]+$', linea):
-                if int(cap) > 0 and int(vers) > 0:                        
-                    GuardarRegistro(tabla_name, libroID, cap, vers, textvers,comentario)
-                    textvers=""
-                    comentario=""
-                vers = int(linea)
-                # comentario=ComentarioBiblico({ruta_comentarios}&"/"&{archivo},cap&"|"&vers)                    
-                comentario = ComentarioBiblico(os.path.join(ruta_comentarios, archivo), str(cap) + "|" + str(vers))
-                copiar = True
+                if int(cap) > 0:
+                    if int(vers) > 0:
+                        GuardarRegistro(tabla_name, libroID, cap, vers, textvers,comentario)
+                        textvers=""
+                        comentario=""
+                    vers = int(linea)                
+                    comentario = ComentarioBiblico(os.path.join(ruta_comentarios, archivo), str(cap) + "|" + str(vers))
+                    copiar = True
             if copiar:
                 textvers += linea + ' '
             # print("Vers", linea)
@@ -125,3 +152,70 @@ for archivo in sorted(os.listdir(ruta_libros)):
         
 
 conn.close()
+ """
+def ExtraerVersiculos():
+    # Declaración de variables:
+    cap = 0
+    vers = 0
+    textvers = ""
+    comentario=""
+    copiar = False
+    libroID = 0
+    ruta_libros = "biblia_txt"
+    ruta_comentarios="CBIndexado"
+    patron_capitulo = r'^\| CAPÍTULO\s+(\d+)\s*$'
+    patron_salmo = r'^\| SALMO\s+(\d+)\s*$'
+    patron_numeroCap = r"\d+"
+
+    # Recorro con un for los archivos de texto que están en la carpeta que está en ruta_libros (los libros de la biblia)
+    n=0
+    # Obtener la lista de nombres de archivo en la carpeta y ordenarla alfabéticamente
+    for archivo in sorted(os.listdir(ruta_libros)):
+        libroID = ExtraerLibroID(archivo)
+        tabla_name = LimpiarNombre(archivo)
+        tabla_name = re.sub('\s+', '_', tabla_name)
+        conn.execute(f"CREATE TABLE IF NOT EXISTS '{tabla_name}' (ID INTEGER PRIMARY KEY AUTOINCREMENT, testamentoID INTEGER, grupoID INTEGER, libroID INTEGER, capitulo INTEGER, versiculo INTEGER, texto TEXT, comentario TEXT)")
+        # conn.execute(f"DROP TABLE IF EXISTS '{tabla_name}';")
+        print("Iteración",n," Libro", tabla_name)
+        copiar = False
+        cap = 0
+        vers = 0
+        with open(f"{ruta_libros}/{archivo}", 'r') as libro_actual:
+            for linea in libro_actual:
+                linea = linea.strip()            
+                if re.match(patron_capitulo, linea):
+                    resultado = re.search(patron_numeroCap, linea)          
+                    if resultado:
+                        cap = resultado.group(0)
+                        print(tabla_name, "Capítulo", cap)
+                        if copiar:
+                            if textvers.strip() and int(cap) > 0 and int(vers) > 0:
+                                GuardarRegistro(tabla_name, libroID, cap, vers, textvers,comentario)                            
+                                textvers=""
+                                comentario=""
+                                copiar = False
+                elif re.match('^[0-9]+$', linea):
+                    if int(cap) > 0 and int(vers) > 0:                        
+                        if textvers.strip() and int(cap) > 0 and int(vers) > 0:
+                            GuardarRegistro(tabla_name, libroID, cap, vers, textvers,comentario)
+                            textvers=""
+                            comentario=""
+                    vers = int(linea)                
+                    comentario = ComentarioBiblico(os.path.join(ruta_comentarios, archivo), str(cap) + "|" + str(vers))
+                    copiar = True
+                if copiar and not re.match(patron_capitulo, linea):
+                    textvers += linea + ' '
+            # Verificar si hay algún versículo sin guardar al final del capítulo
+            if copiar:
+                if textvers.strip() and int(cap) > 0 and int(vers) > 0:
+                    GuardarRegistro(tabla_name, libroID, cap, vers, textvers, comentario)                    
+                    textvers=""
+                    comentario=""
+                    copiar = False
+            n=n+1
+
+    conn.close()
+
+
+
+ExtraerVersiculos()
