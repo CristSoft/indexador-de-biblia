@@ -24,30 +24,22 @@ def ComentarioBiblico(archivo, cap_y_ver):
         return texto.strip() """
 import re
 
-def ComentarioBiblico(archivo, cap_y_ver):
-    with open(archivo, 'r', encoding='utf-8') as f:
-        contenido = f.read()
-        pos1 = contenido.find(cap_y_ver)
-        if pos1 == -1:
-            return ""
-        pos2 = contenido.find("\n", pos1+len(cap_y_ver))
-        if pos2 == -1:
-            pos2 = len(contenido)
-        # Buscar la siguiente combinación "num|num"
-        pos3 = contenido.find("\n\d+\|\d+", pos2)
-        if pos3 == -1:
-            pos3 = len(contenido)
-        # Obtener el texto entre las cadenas
-        inicio = pos2 + 1
-        fin = pos3
-        texto = contenido[inicio:fin]
-        # Verificar que la cadena encontrada sea exactamente igual a "num|num"
-        match = re.match(r"^\d+\|\d+$", cap_y_ver)
-        if match and contenido[pos1:pos2].strip() == cap_y_ver:
-            return texto.strip()
-        else:
-            return ""
-
+def ComentarioBiblico(archivo, cap, ver):
+    # ruta_archivo = "CBIndexado/" + archivo
+    
+    texto_acumulado = ""
+    with open(archivo, "r", encoding="utf-8") as f:
+        for linea in f:
+            if re.match(r'^\d+\|\d+', linea):
+                c, v = linea.strip().split("|")
+                if c == str(cap) and v == str(ver):
+                    for linea2 in f:
+                        if re.match(r'^\d+\|\d+', linea2):
+                            break
+                        texto_acumulado += linea2
+                    return texto_acumulado
+    
+    return "no hay comentarios para este versículo"
 
 
 
@@ -153,7 +145,7 @@ for archivo in sorted(os.listdir(ruta_libros)):
 
 conn.close()
  """
-def ExtraerVersiculos():
+def main():
     # Declaración de variables:
     cap = 0
     vers = 0
@@ -201,7 +193,7 @@ def ExtraerVersiculos():
                             textvers=""
                             comentario=""
                     vers = int(linea)                
-                    comentario = ComentarioBiblico(os.path.join(ruta_comentarios, archivo), str(cap) + "|" + str(vers))
+                    comentario = ComentarioBiblico(os.path.join(ruta_comentarios, archivo), cap, vers)
                     copiar = True
                 if copiar and not re.match(patron_capitulo, linea):
                     textvers += linea + ' '
@@ -218,4 +210,4 @@ def ExtraerVersiculos():
 
 
 
-ExtraerVersiculos()
+main()
