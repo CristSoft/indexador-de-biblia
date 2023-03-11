@@ -60,7 +60,7 @@ def GrupoDesdeID(id_de_grupo):
         return "solitario de Apocalipsis"
 
 
-#Función para buscar los comentarios bíblicos
+""" #Función para buscar los comentarios bíblicos
 def ComentarioBiblico(archivo, cap_y_ver):
     # Abrir el archivo
     # with open(archivo, 'r') as f:    
@@ -79,14 +79,34 @@ def ComentarioBiblico(archivo, cap_y_ver):
         inicio = pos1 + len(cap_y_ver)
         fin = pos2
         texto = contenido[inicio:fin]
-        return texto.strip()
+        return texto.strip() """
+
+import re
+
+def ComentarioBiblico(archivo, cap, ver):
+    # ruta_archivo = "CBIndexado/" + archivo
+    
+    texto_acumulado = ""
+    with open(archivo, "r", encoding="utf-8") as f:
+        for linea in f:
+            if re.match(r'^\d+\|\d+', linea):
+                c, v = linea.strip().split("|")
+                if c == str(cap) and v == str(ver):
+                    for linea2 in f:
+                        if re.match(r'^\d+\|\d+', linea2):
+                            break
+                        texto_acumulado += linea2
+                    return texto_acumulado
+    
+    return "no hay comentarios para este versículo"
+
 
 
 #Sección para profar las funciones:______________________________
 #________________________________________________________________
 
 
-libro="41.Marcos.txt"
+libro="1.Genesis.txt"
 archivo="CBIndexado/"+libro
 os.system('cls')
 print("")
@@ -94,4 +114,4 @@ print("El id de ",libro, " es: ", ExtraerLibroID(libro))
 print("El archivo ", libro, " ahora se llama: ", LimpiarNombre(libro))
 print("El libro de",LimpiarNombre(libro) ," pertenece al grupo", GrupoDesdeID(AsignarGrupoID(LimpiarNombre(libro))))
 print(LimpiarNombre(libro),"pertenece al",AToNT(ExtraerLibroID(libro)))
-print(ComentarioBiblico(archivo,"1|2"))
+print(ComentarioBiblico(archivo, 1,17))
