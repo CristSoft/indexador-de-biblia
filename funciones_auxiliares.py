@@ -93,6 +93,36 @@ def agregar_referencias_vacias(archivo):
 
 
 
-ruta_libros = "CBIndexado/"
-agregar_referencias_vacias(ruta_libros+"GenesisPrueba.txt")
+# Buscar número|número que contenga otros caracteres antes o después y mostrarlos por consola
+def find_lines_with_pattern(folder_path):
+    pattern = r".*[^0-9|](\d+\|\d+)[^0-9|].*"
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            with open(file_path, mode='r', encoding='utf-8') as f:
+                for line in f:
+                    match = re.search(pattern, line)
+                    if match:
+                        print(line.rstrip())
 
+
+
+
+# Reemplazar todas las ocurrencias de un caracter o cadena
+import fileinput
+def replace_in_files(folder_path, cadena):
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            with open(file_path, mode='r', encoding='utf-8') as f:
+                content = f.read()
+            with open(file_path, mode='w', encoding='utf-8') as f:
+                f.write(content.replace(cadena, ""))
+
+
+ruta_libros = "CBIndexado"
+# agregar_referencias_vacias(ruta_libros+"/GenesisPrueba.txt")
+
+replace_in_files(ruta_libros,"")
+
+# find_lines_with_pattern(ruta_libros)
