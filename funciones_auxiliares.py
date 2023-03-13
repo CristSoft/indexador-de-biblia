@@ -120,9 +120,119 @@ def replace_in_files(folder_path, cadena):
                 f.write(content.replace(cadena, ""))
 
 
-ruta_libros = "CBIndexado"
+
+# Buscar dos cadenas y eliminar lo que hay entre ellas
+def borrar_entre_cadenas(nombre_archivo, cadena1, cadena2):
+    with open(nombre_archivo, 'r', encoding="utf-8") as archivo:
+        lineas = archivo.readlines()
+    i = 0
+    while i < len(lineas):
+        if cadena1 in lineas[i]:
+            j = i + 1
+            while j < len(lineas):
+                if cadena2 in lineas[j]:
+                    # Eliminar las líneas entre las cadenas
+                    del lineas[i:j]
+                    break
+                j += 1
+        i += 1
+    with open(nombre_archivo, 'w', encoding="utf-8") as archivo:
+        archivo.writelines(lineas)
+
+
+import chardet
+# Buscar palabras por capítulo y versículo en los comentarios bíblicos
+def buscar_palabras(nombre_archivo, cadena):
+    flag=False
+    n=0
+    with open(nombre_archivo, 'rb') as f:
+        result = chardet.detect(f.read())
+    with open(nombre_archivo, 'r', encoding=result['encoding']) as archivo:
+        try:
+            for linea in archivo:            
+                # patron = r'(?<!\S){}(?!\S)'.format(cadena + r'\s*\d+')
+                patron = r'(?<!\S)CAPÍTULO\s*\d+(?!\S)'
+                if re.search(patron, linea):
+                    flag=True
+                    n+=1
+                if flag==True:
+                    match = re.search(r'\d+\|\d+', linea)
+                    if match: 
+                        # borrar_entre_cadenas(nombre_archivo,linea,match.group(0))                                      
+                        print(n,": ",nombre_archivo,"-", match.group(0), "     LINEA")
+                        flag=False
+        except:
+            None
+    return n
+
+
+import os
+import re
+import chardet
+
+def buscar_patron_y_borrar(cadena, nombre_archivo):
+    with open(nombre_archivo, 'rb') as f:
+        result = chardet.detect(f.read())  # detectar el encoding del archivo
+    with open(nombre_archivo, 'r', encoding=result['encoding']) as archivo:
+        contenido = archivo.readlines()
+
+import re
+
+def borrar_entre_cadenas(nombre_archivo, cadena_inicio, cadena_fin):
+    try:
+        with open(nombre_archivo, 'r', encoding="utf-8") as archivo:
+            contenido = archivo.read()
+            patron = re.compile(re.escape(cadena_inicio) + r'.*?' + re.escape(cadena_fin), re.DOTALL)
+            contenido_nuevo = patron.sub('', contenido)
+        with open(nombre_archivo, 'w', encoding="utf-8") as archivo:
+            archivo.write(contenido_nuevo)
+    except Exception as e:
+        print("Error al procesar el archivo:", nombre_archivo)
+        print(e)
+
+def buscar_patron(nombre_archivo):
+    try:
+        with open(nombre_archivo, 'r', encoding="utf-8") as archivo:
+            contenido = archivo.read()
+            patron = r'(?s)\bCAPÍTULO\s+\d+\b.*?\d+\|\d+'
+            matches = re.findall(patron, contenido)
+            for match in matches:
+                capitulo_patron = re.compile(r'\bCAPÍTULO\s+\d+\b.*?')
+                capitulo_match = re.search(capitulo_patron, match)
+                if capitulo_match:
+                    borrar_entre_cadenas(nombre_archivo, capitulo_match.group(0), match)
+                    print(match)
+    except Exception as e:
+        print("Error al procesar el archivo:", nombre_archivo)
+        print(e)
+
+# carpeta = 'CBIndexado'
+# for archivo in os.listdir(carpeta):
+#     if archivo.endswith(".txt"):
+#         buscar_patron(os.path.join(carpeta, archivo))
+
+
+# # iterar para cada archivo de la carpeta "CBIndexado"
+# carpeta = "CBIndexado"
+# cadena = "CAPÍTULO"
+# for archivo in os.listdir(carpeta):
+#     buscar_patron_y_borrar(cadena, os.path.join(carpeta, archivo))
+
+
+
+carpeta="CBIndexado"
+cadena="CAPÍTULO"
+n=0
+for archivo in os.listdir(carpeta):    
+    index=0
+    n+=buscar_palabras(carpeta+"/"+archivo , cadena)
+print(n, "veces aparece la palabra '",cadena, "' en los comentarios bíblicos" )
+
+# ruta_libros = "CBIndexado"
 # agregar_referencias_vacias(ruta_libros+"/GenesisPrueba.txt")
 
-replace_in_files(ruta_libros,"")
+# replace_in_files(ruta_libros,"")
 
 # find_lines_with_pattern(ruta_libros)
+
+# borrar_entre_cadenas("11.reyes1.txt","CAPÍTULO","6|1")
