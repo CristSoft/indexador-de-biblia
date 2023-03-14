@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8" />
+    <title>API de búsqueda de versículos bíblicos</title>
+</head>
+
+<body>
+    <h1>API de búsqueda de versículos bíblicos</h1>
+    <form>
+        <label for="libro">Libro:</label>
+        <input type="text" id="libro" name="libro" required /><br /><br />
+        <label for="capitulo">Capítulo:</label>
+        <input type="number" id="capitulo" name="capitulo" required /><br /><br />
+        <label for="versiculo">Versículo:</label>
+        <input type="number" id="versiculo" name="versiculo" required /><br /><br />
+        <button type="button" onclick="buscar()">Buscar</button>
+    </form>
+    <div></div>
+    <div id="resultado"></div>
+
+    <script>
+        // Abrir la conexión con la base de datos
+        var conexion = new sqlite3.Database('biblia.db');
+
+        class Versiculo {
+            constructor(libro, capitulo, versiculo, texto, comentario) {
+                this.libro = libro.charAt(0).toUpperCase() + libro.slice(1);
+                this.capitulo = capitulo;
+                this.versiculo = versiculo;
+                this.texto = texto.charAt(0).toUpperCase() + texto.slice(1);
+                this.comentario = comentario.charAt(0).toUpperCase() + comentario.slice(1);
+            }
+        }
+
+        function obtener_versiculo(libro, capitulo, versiculo) {
+            // Reemplazar los caracteres con tilde por sus equivalentes sin tilde
+            libro = libro.replace(/[áéíóú]/gi, function(m) {
+                switch (m) {
+                    case "á":
+                        return "a";
+                    case "é":
+                        return "e";
+                    case "í":
+                        return "i";
+                    case "ó":
+                        return "o";
+                    case "ú":
+                        return "u";
+                }
+            }).toUpperCase();
+
+
+            // Crear la consulta SQL para recuperar el texto y el comentario del versículo
+            var consulta = "SELECT texto, comentario FROM " + libro + " WHERE capitulo = ? AND versiculo = ?";
+
+            // Ejecutar la consulta SQL y obtener el resultado
+            conexion.get(consulta, [capitulo, versiculo], function(err, row) {
+                conexion.close();
+                if (err) {
+                    console.error(err.message);
+                    return "Error al buscar el versículo";
+                }
+                if (row) {
+                    // Si se encuentra el versículo, crear un objeto Versiculo con los datos
+                    return new Versiculo(libro, capitulo, versiculo, row.texto, row.comentario);
+                } else {
+                    // Si no se encuentra el versículo, devolver un mensaje de error
+                    return "No se encontró el versículo";
+                }
+            });
+        }
+
+        function buscar() {
+            var libro = document.getElementById('libro').value;
+            var capitulo = document.getElementById('capitulo').value;
+            var versiculo = document.getElementById('versiculo').value;
+
+            var resultado_div = document.getElementById('resultado');
+            resultado_div.innerHTML = "Buscando...";
+            var versiculo_obj = obtener_versiculo(libro, capitulo, versiculo);
+            resultado_div.innerHTML = "<strong>" + versiculo_obj.libro + " " + versiculo_obj.capitulo + ":" + versiculo_obj.versiculo + "</strong><br>" + versiculo_obj.texto + "</strong><br>" + versiculo_obj.comentario;
+
+            if (versiculo_obj instanceof Versiculo) {
+                resultado_div.innerHTML = "<strong>" + versiculo_obj.libro + " " + versiculo_obj.capitulo + ":" + versiculo_obj.versiculo + "</strong><br>" + versiculo_obj.texto;
+                if (versiculo_obj.comentario) {
+                    resultado_div.innerHTML += "<br><em>" + versiculo_obj.comentario + "</em>";
+                }
+            } else {
+                resultado_div.innerHTML = "<strong>" + versiculo_obj + "</strong>";
+            }
+        }
+    </script>
+</body>
+
+</html>
