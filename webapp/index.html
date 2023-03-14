@@ -52,45 +52,54 @@
                 }
             }).toUpperCase();
 
-
             // Crear la consulta SQL para recuperar el texto y el comentario del versículo
-            var consulta = "SELECT texto, comentario FROM " + libro + " WHERE capitulo = ? AND versiculo = ?";
+            var consulta = "SELECT texto, comentario FROM " + libro + " WHERE capitulo = " + capitulo + " AND versiculo = " + versiculo;
 
-            // Ejecutar la consulta SQL y obtener el resultado
-            conexion.get(consulta, [capitulo, versiculo], function(err, row) {
-                conexion.close();
-                if (err) {
-                    console.error(err.message);
-                    return "Error al buscar el versículo";
-                }
-                if (row) {
-                    // Si se encuentra el versículo, crear un objeto Versiculo con los datos
-                    return new Versiculo(libro, capitulo, versiculo, row.texto, row.comentario);
-                } else {
-                    // Si no se encuentra el versículo, devolver un mensaje de error
-                    return "No se encontró el versículo";
-                }
+            // Devolver una promesa que resuelve con un objeto Versiculo o un mensaje de error
+            return new Promise(function(resolve, reject) {
+                conexion.get(consulta, [capitulo, versiculo], function(err, row) {
+                    conexion.close();
+                    if (err) {
+                        console.error(err.message);
+                        reject("Error al buscar el versículo");
+                    }
+                    if (row) {
+                        // Si se encuentra el versículo, crear un objeto Versiculo con los datos
+                        resolve(new Versiculo(libro, capitulo, versiculo, row.texto, row.comentario));
+                    } else {
+                        // Si no se encuentra el versículo, devolver un mensaje de error
+                        reject("No se encontró el versículo");
+                    }
+                });
             });
         }
+
+
 
         function buscar() {
             var libro = document.getElementById('libro').value;
             var capitulo = document.getElementById('capitulo').value;
             var versiculo = document.getElementById('versiculo').value;
-
             var resultado_div = document.getElementById('resultado');
-            resultado_div.innerHTML = "Buscando...";
-            var versiculo_obj = obtener_versiculo(libro, capitulo, versiculo);
-            resultado_div.innerHTML = "<strong>" + versiculo_obj.libro + " " + versiculo_obj.capitulo + ":" + versiculo_obj.versiculo + "</strong><br>" + versiculo_obj.texto + "</strong><br>" + versiculo_obj.comentario;
 
-            if (versiculo_obj instanceof Versiculo) {
-                resultado_div.innerHTML = "<strong>" + versiculo_obj.libro + " " + versiculo_obj.capitulo + ":" + versiculo_obj.versiculo + "</strong><br>" + versiculo_obj.texto;
-                if (versiculo_obj.comentario) {
-                    resultado_div.innerHTML += "<br><em>" + versiculo_obj.comentario + "</em>";
-                }
-            } else {
-                resultado_div.innerHTML = "<strong>" + versiculo_obj + "</strong>";
-            }
+            resultado_div.innerHTML = "Buscando...";
+
+            ver = obtener_versiculo(libro, capitulo, versiculo)
+            console.log(ver.libro, ver.capitulo, ":", ver.versiculo, "\nCOMENTARIO:\n", ver.comentario)
+                .then(function(versiculo_obj) {
+                    if (versiculo_obj instanceof Versiculo) {
+                        resultado_div.innerHTML = "<strong>" + versiculo_obj.libro + " " + versiculo_obj.capitulo + ":" + versiculo_obj.versiculo + "</strong><br>" + versiculo_obj.texto;
+                        if (versiculo_obj.comentario) {
+                            resultado_div.innerHTML += "<br><em>" + versiculo_obj.comentario + "</em>";
+                        }
+                    } else {
+                        resultado_div.innerHTML = "<strong>" + versiculo_obj + "</strong>";
+                    }
+                })
+                .catch(function(error) {
+                    console.error(error);
+                    resultado_div.innerHTML = "<strong>Error al buscar el versículo</strong>";
+                });
         }
     </script>
 </body>
